@@ -3,8 +3,11 @@ name = "proginfo"
 description = "Current program info for omnia streams in description field"
 version = "0.1.0"
 dependencies = [
-    "requests",
+    "attrs",
     "omniapy@git+https://github.com/alex-berlin-tv/omniapy.git",
+    "pydantic",
+    "requests",
+    "typed-settings==23.0.1"
 ]
 
 [tool.setuptools]
