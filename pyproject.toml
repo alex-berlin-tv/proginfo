@@ -4,7 +4,7 @@ description = "Current program info for omnia streams in description field"
 version = "0.1.0"
 dependencies = [
     "requests",
-    "git+https://github.com/alex-berlin-tv/omniapy.git",
+    "omniapy@git+https://github.com/alex-berlin-tv/omniapy.git",
 ]
 
 [tool.setuptools]
