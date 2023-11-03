@@ -1,6 +1,18 @@
+from typing import Optional
 from .config import settings
-from .data import Data
+from .data import Formatter
+
+from omniapy import Omnia, StreamType
+
 
 def app():
-    dt = Data.from_url(settings.radio_data_url)
-    print(dt.current_and_next(4))
+    formatter = Formatter()
+    omnia = Omnia(settings.domain_id, settings.api_secret, settings.session_id)
+    omnia.update(
+        StreamType.RADIO,
+        settings.radio_id,
+        {
+            "title": formatter.radio_title(),
+            "description": formatter.radio_description(),
+        }
+    )

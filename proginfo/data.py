@@ -1,7 +1,7 @@
 from .config import settings
 
 import csv
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from io import StringIO
 from typing import Optional
 
@@ -11,6 +11,30 @@ import requests
 
 DATE_FORMAT = "%d.%m.%Y"
 TIME_FORMAT = "%H:%M:%S"
+
+
+class Formatter:
+    def __init__(self):
+        self.tv_data = Data.from_url(settings.tv_data_url)
+        self.radio_data = Data.from_url(settings.radio_data_url)
+
+    def tv_title(self) -> str:
+        return self.__tv_current().title()
+    
+    def tv_description(self) -> str:
+        return self.__tv_current().description(settings.tv_description_footer)
+
+    def radio_title(self) -> str:
+        return self.__radio_current().title()
+    
+    def radio_description(self) -> str:
+        return self.__radio_current().description(settings.radio_description_footer)
+
+    def __tv_current(self) -> "Data":
+        return Data(self.tv_data.current_and_next())
+
+    def __radio_current(self) -> "Data":
+        return Data(self.radio_data.current_and_next())
 
 
 @define
@@ -33,7 +57,9 @@ class Data:
         response.raise_for_status()
         return response.content.decode(settings.data_encoding)
 
-    def current_and_next(self, follower_count: int) -> list["Entry"]:
+    def current_and_next(self) -> list["Entry"]:
+        if settings.next_count < 2:
+            raise ValueError(f"field next_count in config has to be at least 2, currently {settings.next_count}")
         current_time = datetime.now()
         rsl: list["Entry"] = []
         i = 0
@@ -44,10 +70,23 @@ class Data:
             i += 1
         if len(rsl) == 0:
             raise ValueError("no entry for current time found")
-        for j in range(i+1, i+follower_count):
+        for j in range(i+1, i+settings.next_count):
             if len(self.root) - 1 >= j:
                 rsl.append(self.root[j])
         return rsl
+    
+    def title(self) -> str:
+        if len(self.root) < 1:
+            raise RuntimeError("tried to call method on empty collection")
+        next_entry: Optional[Entry] = None
+        if len(self.root) > 1:
+            next_entry = self.root[1]
+        return self.root[0].format_title(next_entry)
+    
+    def description(self, footer: str) -> str:
+        descriptions = [entry.format_description() for entry in self.root]
+        rsl = "\n".join(descriptions)
+        return f"{rsl}\n{footer}"
 
 
 @define
@@ -55,6 +94,7 @@ class Entry:
     when: datetime
     duration: timedelta
     title: str
+    author: str
     description: str
     url: Optional[str]
 
@@ -62,7 +102,8 @@ class Entry:
     def from_row(cls, row: list[str]):
         if len(row) != 8:
             raise ValueError(
-                f"input data row should have 8 fields got {len(row)} instead, data: {row}")
+                f"input data row should have 8 fields got {len(row)} instead, data: {row}"
+            )
         date = datetime.strptime(row[2], DATE_FORMAT)
         time = datetime.strptime(row[3], TIME_FORMAT)
         date = date.replace(
@@ -72,9 +113,43 @@ class Entry:
             when=date,
             duration=timedelta(minutes=int(row[4])),
             title=row[5],
-            description=row[6],
+            author=row[6],
+            description=row[7],
             url=row[1],
         )
 
     def is_current(self, moment: datetime) -> bool:
         return moment > self.when and moment < (self.when + self.duration)
+
+    def format_title(self, next_entry: Optional["Entry"]) -> str:
+        rsl = f"{settings.radio_prefix}: {self.title}"
+        if not self.__show_both_titles() or next_entry is None:
+            return rsl
+        return f"{rsl} und danach um {next_entry.format_time()} {next_entry.title}"
+
+    def format_description(self) -> str:
+        url = ""
+        if self.format_url() is not None:
+            url = f" Mehr infos unter {self.format_url()}"
+        return f"{self.format_time()}: {self.title}. {self.description}{url}"
+
+    def format_time(self) -> str:
+        return self.when.strftime('%H:%M')
+
+    def __show_both_titles(self) -> bool:
+        """
+        Between certain times, the title field should show the title the current 
+        and the next show. This is needed as caching of neon makes it not possible
+        to predict when the content in the frontend gets updated.
+        """
+        current_time = datetime.now().time()
+        start_time = time(current_time.hour, 40, 0)
+        end_time = time(current_time.hour, 56, 0)
+        return start_time <= current_time <= end_time
+    
+    def format_url(self) -> Optional[str]:
+        if self.url is None:
+            return None
+        if self.url.startswith("http"):
+            return self.url
+        return f"https://{self.url}"
