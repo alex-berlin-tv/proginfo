@@ -1,4 +1,3 @@
-from typing import Optional
 from .config import settings
 from .data import Formatter
 
@@ -14,5 +13,12 @@ def app():
         {
             "title": formatter.radio_title(),
             "description": formatter.radio_description(),
+        }
+    )
+    omnia.update(
+        StreamType.LIVE,
+        settings.tv_id,
+        {
+            "description": formatter.tv_description(),
         }
     )

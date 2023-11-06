@@ -148,8 +148,14 @@ class Entry:
         return start_time <= current_time <= end_time
     
     def format_url(self) -> Optional[str]:
-        if self.url is None:
+        print("-----")
+        print(self.url)
+        if self.url is None or self.url == "":
+            return None
+        if self.url.find("alex-berlin.de") >= 0:
+            print("is alex-berlin.de")
             return None
         if self.url.startswith("http"):
             return self.url
+        print(f"https will be added")
         return f"https://{self.url}"
