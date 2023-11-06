@@ -1,4 +1,5 @@
 from .config import settings
+from .log import logger
 
 import csv
 from datetime import datetime, time, timedelta
@@ -68,8 +69,18 @@ class Data:
                 rsl = [entry]
                 break
             i += 1
+
         if len(rsl) == 0:
-            raise ValueError("no entry for current time found")
+            logger.warn("no entry for current time found, will use latest item relative to know")
+            last_entry: Optional[Entry] = None
+            for entry in self.root:
+                if not entry.starts_in_past(current_time):
+                    if last_entry is None:
+                        raise ValueError("no entry for current time found and first element is in the future")
+                    rsl = [last_entry]
+                    break
+                last_entry = entry
+
         for j in range(i+1, i+settings.next_count):
             if len(self.root) - 1 >= j:
                 rsl.append(self.root[j])
@@ -85,8 +96,8 @@ class Data:
     
     def description(self, footer: str) -> str:
         descriptions = [entry.format_description() for entry in self.root]
-        rsl = "\n".join(descriptions)
-        return f"{rsl}\n{footer}"
+        rsl = "\n\n".join(descriptions)
+        return f"{rsl}\n---\n{footer}"
 
 
 @define
@@ -112,14 +123,18 @@ class Entry:
         return Entry(
             when=date,
             duration=timedelta(minutes=int(row[4])),
-            title=row[5],
-            author=row[6],
-            description=row[7],
-            url=row[1],
+            title=cls.clean_string(row[5]),
+            author=cls.clean_string(row[6]),
+            description=cls.clean_string(row[7]),
+            url=cls.clean_string(row[1]),
         )
 
     def is_current(self, moment: datetime) -> bool:
         return moment > self.when and moment < (self.when + self.duration)
+    
+    def starts_in_past(self, moment: datetime) -> bool:
+        delta = moment - self.when
+        return delta.total_seconds() < 0
 
     def format_title(self, next_entry: Optional["Entry"]) -> str:
         rsl = f"{settings.radio_prefix}: {self.title}"
@@ -131,7 +146,8 @@ class Entry:
         url = ""
         if self.format_url() is not None:
             url = f" Mehr infos unter {self.format_url()}"
-        return f"{self.format_time()}: {self.title}. {self.description}{url}"
+        rsl = f"{self.format_time()}: {self.title}. {self.description}{url}"
+        return rsl.strip()
 
     def format_time(self) -> str:
         return self.when.strftime('%H:%M')
@@ -148,14 +164,16 @@ class Entry:
         return start_time <= current_time <= end_time
     
     def format_url(self) -> Optional[str]:
-        print("-----")
-        print(self.url)
         if self.url is None or self.url == "":
             return None
         if self.url.find("alex-berlin.de") >= 0:
-            print("is alex-berlin.de")
             return None
         if self.url.startswith("http"):
             return self.url
-        print(f"https will be added")
         return f"https://{self.url}"
+    
+    @staticmethod
+    def clean_string(data: str) -> str:
+        data = data.strip()
+        data = data.replace("\r\n", " ")
+        return data.replace("\n", " ")

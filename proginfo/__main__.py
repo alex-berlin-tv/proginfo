@@ -15,6 +15,7 @@ def app():
             "description": formatter.radio_description(),
         }
     )
+    print(formatter.tv_description())
     omnia.update(
         StreamType.LIVE,
         settings.tv_id,
