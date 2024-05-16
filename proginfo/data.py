@@ -7,7 +7,7 @@ from io import StringIO
 from typing import Optional
 
 from attrs import define
-import requests
+from requests_doh import DNSOverHTTPSSession, add_dns_provider
 
 
 DATE_FORMAT = "%d.%m.%Y"
@@ -21,13 +21,13 @@ class Formatter:
 
     def tv_title(self) -> str:
         return self.__tv_current().title()
-    
+
     def tv_description(self) -> str:
         return self.__tv_current().description(settings.tv_description_footer)
 
     def radio_title(self) -> str:
         return self.__radio_current().title()
-    
+
     def radio_description(self) -> str:
         return self.__radio_current().description(settings.radio_description_footer)
 
@@ -54,13 +54,15 @@ class Data:
 
     @staticmethod
     def download_text(url: str) -> str:
-        response = requests.get(url)
+        session = DNSOverHTTPSSession(provider="google")
+        response = session.get(url)
         response.raise_for_status()
         return response.content.decode(settings.data_encoding)
 
     def current_and_next(self) -> list["Entry"]:
         if settings.next_count < 2:
-            raise ValueError(f"field next_count in config has to be at least 2, currently {settings.next_count}")
+            raise ValueError(
+                f"field next_count in config has to be at least 2, currently {settings.next_count}")
         current_time = datetime.now()
         rsl: list["Entry"] = []
         i = 0
@@ -71,12 +73,14 @@ class Data:
             i += 1
 
         if len(rsl) == 0:
-            logger.warn("no entry for current time found, will use latest item relative to know")
+            logger.warn(
+                "no entry for current time found, will use latest item relative to know")
             last_entry: Optional[Entry] = None
             for entry in self.root:
                 if not entry.starts_in_past(current_time):
                     if last_entry is None:
-                        raise ValueError("no entry for current time found and first element is in the future")
+                        raise ValueError(
+                            "no entry for current time found and first element is in the future")
                     rsl = [last_entry]
                     break
                 last_entry = entry
@@ -85,7 +89,7 @@ class Data:
             if len(self.root) - 1 >= j:
                 rsl.append(self.root[j])
         return rsl
-    
+
     def title(self) -> str:
         if len(self.root) < 1:
             raise RuntimeError("tried to call method on empty collection")
@@ -93,7 +97,7 @@ class Data:
         if len(self.root) > 1:
             next_entry = self.root[1]
         return self.root[0].format_title(next_entry)
-    
+
     def description(self, footer: str) -> str:
         descriptions = [entry.format_description() for entry in self.root]
         rsl = "\n\n".join(descriptions)
@@ -131,7 +135,7 @@ class Entry:
 
     def is_current(self, moment: datetime) -> bool:
         return moment > self.when and moment < (self.when + self.duration)
-    
+
     def starts_in_past(self, moment: datetime) -> bool:
         delta = moment - self.when
         return delta.total_seconds() < 0
@@ -162,7 +166,7 @@ class Entry:
         start_time = time(current_time.hour, 40, 0)
         end_time = time(current_time.hour, 56, 0)
         return start_time <= current_time <= end_time
-    
+
     def format_url(self) -> Optional[str]:
         if self.url is None or self.url == "":
             return None
@@ -171,7 +175,7 @@ class Entry:
         if self.url.startswith("http"):
             return self.url
         return f"https://{self.url}"
-    
+
     @staticmethod
     def clean_string(data: str) -> str:
         data = data.strip()
