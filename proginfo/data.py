@@ -101,7 +101,7 @@ class Data:
 
     def description(self, header: str | None, footer: str) -> str:
         if header is not None:
-            header = f"{header}\n---\n"
+            header = f"{header}\n\n"
         else:
             header = ""
         descriptions = [entry.format_description() for entry in self.root]
