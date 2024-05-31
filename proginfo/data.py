@@ -7,8 +7,7 @@ from io import StringIO
 from typing import Optional
 
 from attrs import define
-from requests_doh import DNSOverHTTPSSession, add_dns_provider
-
+import requests
 
 DATE_FORMAT = "%d.%m.%Y"
 TIME_FORMAT = "%H:%M:%S"
@@ -23,13 +22,18 @@ class Formatter:
         return self.__tv_current().title()
 
     def tv_description(self) -> str:
-        return self.__tv_current().description(settings.tv_description_footer)
+        return self.__tv_current().description(None, settings.tv_description_footer)
 
     def radio_title(self) -> str:
         return self.__radio_current().title()
 
     def radio_description(self) -> str:
-        return self.__radio_current().description(settings.radio_description_footer)
+        rsl = self.__radio_current().description(
+            settings.radio_description_header,
+            settings.radio_description_footer,
+        )
+        print(rsl)
+        return rsl
 
     def __tv_current(self) -> "Data":
         return Data(self.tv_data.current_and_next())
@@ -54,8 +58,7 @@ class Data:
 
     @staticmethod
     def download_text(url: str) -> str:
-        session = DNSOverHTTPSSession(provider="google")
-        response = session.get(url)
+        response = requests.get(url)
         response.raise_for_status()
         return response.content.decode(settings.data_encoding)
 
@@ -98,10 +101,14 @@ class Data:
             next_entry = self.root[1]
         return self.root[0].format_title(next_entry)
 
-    def description(self, footer: str) -> str:
+    def description(self, header: str | None, footer: str) -> str:
+        if header is not None:
+            header = f"{header}\n---\n"
+        else:
+            header = ""
         descriptions = [entry.format_description() for entry in self.root]
         rsl = "\n\n".join(descriptions)
-        return f"{rsl}\n---\n{footer}"
+        return f"{header}{rsl}\n---\n{footer}"
 
 
 @define

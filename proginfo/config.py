@@ -13,6 +13,7 @@ class Settings:
     radio_data_url: str
     radio_id: int
     radio_prefix: str
+    radio_description_header: str
     radio_description_footer: str
     data_encoding: str
     next_count: int
