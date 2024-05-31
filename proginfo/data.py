@@ -28,12 +28,10 @@ class Formatter:
         return self.__radio_current().title()
 
     def radio_description(self) -> str:
-        rsl = self.__radio_current().description(
+        return self.__radio_current().description(
             settings.radio_description_header,
             settings.radio_description_footer,
         )
-        print(rsl)
-        return rsl
 
     def __tv_current(self) -> "Data":
         return Data(self.tv_data.current_and_next())
