@@ -14,7 +14,7 @@ TIME_FORMAT = "%H:%M:%S"
 
 
 class Formatter:
-    def __init__(self, minutes_delta):
+    def __init__(self, minutes_delta: int):
         logger.debug("Initializing Formatter with TV and radio data")
         self.tv_data = Data.from_url(settings.tv_data_url)
         self.radio_data = Data.from_url(settings.radio_data_url)
@@ -184,13 +184,13 @@ class Entry:
     def format_time(self) -> str:
         return self.when.strftime('%H:%M')
 
-    def __show_both_titles(self) -> bool:
+    def __show_both_titles(self, minutes_delta: int) -> bool:
         """
         Between certain times, the title field should show the title the current 
         and the next show. This is needed as caching of neon makes it not possible
         to predict when the content in the frontend gets updated.
         """
-        current_time = datetime.now().time()
+        current_time = datetime.now().time() + timedelta(minutes=minutes_delta)
         start_time = time(current_time.hour, 40, 0)
         end_time = time(current_time.hour, 56, 0)
         should_show_both = start_time <= current_time <= end_time
