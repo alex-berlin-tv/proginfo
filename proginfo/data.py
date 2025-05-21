@@ -170,7 +170,7 @@ class Entry:
     def format_title(self, next_entry: Optional["Entry"]) -> str:
         logger.debug(f"Formatting title for entry: {self.title}, next entry: {next_entry.title if next_entry else None}")
         rsl = f"{settings.radio_prefix}: {self.title}"
-        if not self.__show_both_titles() or next_entry is None:
+        if not self.__show_both_titles(self.minutes_delta) or next_entry is None:
             return rsl
         return f"{rsl} und danach um {next_entry.format_time()} {next_entry.title}"
 
