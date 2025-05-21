@@ -190,7 +190,7 @@ class Entry:
         and the next show. This is needed as caching of neon makes it not possible
         to predict when the content in the frontend gets updated.
         """
-        current_time = datetime.now().time() + timedelta(minutes=minutes_delta)
+        current_time = (datetime.now() + timedelta(minutes=minutes_delta)).time()
         start_time = time(current_time.hour, settings.two_titles_window_start_minutes, 0)
         end_time = time(current_time.hour, settings.two_titles_window_end_minutes, 0)
         should_show_both = start_time <= current_time <= end_time
