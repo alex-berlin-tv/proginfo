@@ -99,11 +99,14 @@ class Data:
                     break
                 last_entry = entry
 
+        # Log only once for all next entries
+        next_entries = []
         for j in range(i+1, i+settings.next_count):
             if len(self.root) - 1 >= j:
-                next_entry = self.root[j]
-                logger.debug(f"Adding next entry: {next_entry.title} at {next_entry.when}")
-                rsl.append(next_entry)
+                next_entries.append(self.root[j])
+        if next_entries:
+            logger.debug(f"Adding {len(next_entries)} next entries starting from: {next_entries[0].title} at {next_entries[0].when}")
+            rsl.extend(next_entries)
         return rsl
 
     def title(self) -> str:
@@ -143,7 +146,6 @@ class Entry:
         time = datetime.strptime(row[3], TIME_FORMAT)
         date = date.replace(
             hour=time.hour, minute=time.minute, second=time.second)
-        logger.debug(f"Parsed entry date/time: {date} with duration: {row[4]} minutes")
 
         return Entry(
             when=date,
@@ -155,15 +157,11 @@ class Entry:
         )
 
     def is_current(self, moment: datetime) -> bool:
-        is_current = moment > self.when and moment < (self.when + self.duration)
-        logger.debug(f"Checking if entry '{self.title}' is current at {moment}: {is_current}")
-        return is_current
+        return moment > self.when and moment < (self.when + self.duration)
 
     def starts_in_past(self, moment: datetime) -> bool:
         delta = moment - self.when
-        starts_in_past = delta.total_seconds() < 0
-        logger.debug(f"Checking if entry '{self.title}' starts in past relative to {moment}: {starts_in_past}")
-        return starts_in_past
+        return delta.total_seconds() < 0
 
     def format_title(self, next_entry: Optional["Entry"]) -> str:
         rsl = f"{settings.radio_prefix}: {self.title}"
