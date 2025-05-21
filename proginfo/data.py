@@ -107,7 +107,8 @@ class Data:
             if len(self.root) - 1 >= j:
                 next_entries.append(self.root[j])
         if next_entries:
-            logger.debug(f"Adding {len(next_entries)} next entries starting from: {next_entries[0].title} at {next_entries[0].when}")
+            entries = [f"{entry.title} at {entry.when}" for entry in next_entries]
+            logger.debug(f"Adding {len(next_entries)} next entries: {", ".join(entries)}")
             rsl.extend(next_entries)
         return rsl
 
@@ -166,6 +167,7 @@ class Entry:
         return delta.total_seconds() < 0
 
     def format_title(self, next_entry: Optional["Entry"]) -> str:
+        logger.debug(f"Formatting title for entry: {self.title}, next entry: {next_entry.title if next_entry else None}")
         rsl = f"{settings.radio_prefix}: {self.title}"
         if not self.__show_both_titles() or next_entry is None:
             return rsl
