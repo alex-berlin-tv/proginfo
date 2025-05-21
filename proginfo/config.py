@@ -15,6 +15,7 @@ class Settings:
     radio_prefix: str
     radio_description_header: str
     radio_description_footer: str
+    radio_set_title: bool
     data_encoding: str
     next_count: int
     log_level: str

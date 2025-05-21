@@ -15,28 +15,35 @@ TIME_FORMAT = "%H:%M:%S"
 
 class Formatter:
     def __init__(self):
+        logger.debug("Initializing Formatter with TV and radio data")
         self.tv_data = Data.from_url(settings.tv_data_url)
         self.radio_data = Data.from_url(settings.radio_data_url)
 
     def tv_title(self) -> str:
+        logger.debug("Getting TV title")
         return self.__tv_current().title()
 
     def tv_description(self) -> str:
+        logger.debug("Getting TV description")
         return self.__tv_current().description(None, settings.tv_description_footer)
 
     def radio_title(self) -> str:
+        logger.debug("Getting radio title")
         return self.__radio_current().title()
 
     def radio_description(self) -> str:
+        logger.debug("Getting radio description")
         return self.__radio_current().description(
             settings.radio_description_header,
             settings.radio_description_footer,
         )
 
     def __tv_current(self) -> "Data":
+        logger.debug("Getting current TV data")
         return Data(self.tv_data.current_and_next())
 
     def __radio_current(self) -> "Data":
+        logger.debug("Getting current radio data")
         return Data(self.radio_data.current_and_next())
 
 
@@ -46,16 +53,19 @@ class Data:
 
     @classmethod
     def from_url(cls, url: str):
+        logger.debug(f"Downloading data from URL: {url}")
         raw = cls.download_text(url)
         reader = csv.reader(StringIO(raw), delimiter="|")
         rsl: list["Entry"] = []
         for row in reader:
             rsl.append(Entry.from_row(row))
         rsl = sorted(rsl, key=lambda entry: entry.when)
+        logger.debug(f"Loaded {len(rsl)} entries from data source")
         return cls(rsl)
 
     @staticmethod
     def download_text(url: str) -> str:
+        logger.debug(f"Making HTTP request to: {url}")
         response = requests.get(url)
         response.raise_for_status()
         return response.content.decode(settings.data_encoding)
@@ -65,30 +75,35 @@ class Data:
             raise ValueError(
                 f"field next_count in config has to be at least 2, currently {settings.next_count}")
         current_time = datetime.now()
+        logger.debug(f"Finding current and next entries for time: {current_time}")
         rsl: list["Entry"] = []
         i = 0
         for entry in self.root:
             if entry.is_current(current_time):
+                logger.debug(f"Found current entry: {entry.title} at {entry.when}")
                 rsl = [entry]
                 break
             i += 1
 
         if len(rsl) == 0:
             logger.warn(
-                "no entry for current time found, will use latest item relative to know")
+                "no entry for current time found, will use latest item relative to now")
             last_entry: Optional[Entry] = None
             for entry in self.root:
                 if not entry.starts_in_past(current_time):
                     if last_entry is None:
                         raise ValueError(
                             "no entry for current time found and first element is in the future")
+                    logger.debug(f"Using last entry before current time: {last_entry.title} at {last_entry.when}")
                     rsl = [last_entry]
                     break
                 last_entry = entry
 
         for j in range(i+1, i+settings.next_count):
             if len(self.root) - 1 >= j:
-                rsl.append(self.root[j])
+                next_entry = self.root[j]
+                logger.debug(f"Adding next entry: {next_entry.title} at {next_entry.when}")
+                rsl.append(next_entry)
         return rsl
 
     def title(self) -> str:
@@ -128,6 +143,7 @@ class Entry:
         time = datetime.strptime(row[3], TIME_FORMAT)
         date = date.replace(
             hour=time.hour, minute=time.minute, second=time.second)
+        logger.debug(f"Parsed entry date/time: {date} with duration: {row[4]} minutes")
 
         return Entry(
             when=date,
@@ -139,11 +155,15 @@ class Entry:
         )
 
     def is_current(self, moment: datetime) -> bool:
-        return moment > self.when and moment < (self.when + self.duration)
+        is_current = moment > self.when and moment < (self.when + self.duration)
+        logger.debug(f"Checking if entry '{self.title}' is current at {moment}: {is_current}")
+        return is_current
 
     def starts_in_past(self, moment: datetime) -> bool:
         delta = moment - self.when
-        return delta.total_seconds() < 0
+        starts_in_past = delta.total_seconds() < 0
+        logger.debug(f"Checking if entry '{self.title}' starts in past relative to {moment}: {starts_in_past}")
+        return starts_in_past
 
     def format_title(self, next_entry: Optional["Entry"]) -> str:
         rsl = f"{settings.radio_prefix}: {self.title}"
@@ -170,7 +190,9 @@ class Entry:
         current_time = datetime.now().time()
         start_time = time(current_time.hour, 40, 0)
         end_time = time(current_time.hour, 56, 0)
-        return start_time <= current_time <= end_time
+        should_show_both = start_time <= current_time <= end_time
+        logger.debug(f"Checking if should show both titles at {current_time}: {should_show_both} (window: {start_time}-{end_time})")
+        return should_show_both
 
     def format_url(self) -> Optional[str]:
         if self.url is None or self.url == "":

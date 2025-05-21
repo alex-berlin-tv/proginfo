@@ -34,7 +34,7 @@ def app():
             StreamType.RADIO,
             settings.radio_id,
             {
-                "title": formatter.radio_title(),
+                **({"title": formatter.radio_title()} if settings.radio_set_title else {}),
                 "description": formatter.radio_description(),
             }
         )
