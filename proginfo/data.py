@@ -119,7 +119,7 @@ class Data:
         next_entry: Optional[Entry] = None
         if len(self.root) > 1:
             next_entry = self.root[1]
-        return self.root[0].format_title(next_entry)
+        return self.root[0].format_title(next_entry, self.minutes_delta)
 
     def description(self, header: str | None, footer: str) -> str:
         if header is not None:
@@ -167,10 +167,10 @@ class Entry:
         delta = moment - self.when
         return delta.total_seconds() < 0
 
-    def format_title(self, next_entry: Optional["Entry"]) -> str:
+    def format_title(self, next_entry: Optional["Entry"], minutes_delta: int) -> str:
         logger.debug(f"Formatting title for entry: {self.title}, next entry: {next_entry.title if next_entry else None}")
         rsl = f"{settings.radio_prefix}: {self.title}"
-        if not self.__show_both_titles(self.minutes_delta) or next_entry is None:
+        if not self.__show_both_titles(minutes_delta) or next_entry is None:
             return rsl
         return f"{rsl} und danach um {next_entry.format_time()} {next_entry.title}"
 
