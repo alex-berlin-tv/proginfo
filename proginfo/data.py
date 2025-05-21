@@ -108,7 +108,7 @@ class Data:
                 next_entries.append(self.root[j])
         if next_entries:
             entries = [f"{entry.title} at {entry.when}" for entry in next_entries]
-            logger.debug(f"Adding {len(next_entries)} next entries: {", ".join(entries)}")
+            logger.debug(f"Adding {len(next_entries)} next entries: {', '.join(entries)}")
             rsl.extend(next_entries)
         return rsl
 
