@@ -28,7 +28,7 @@ class Formatter:
         logger.debug("Getting TV description")
         return self.__tv_current().description(None, settings.tv_description_footer)
 
-    def radio_title(self, ) -> str:
+    def radio_title(self) -> str:
         logger.debug("Getting radio title")
         rsl = self.__radio_current().title(self.minutes_delta)
         logger.debug(f"Radio title: {rsl}")
