@@ -11,12 +11,13 @@ def app():
     parser = argparse.ArgumentParser()
     parser.add_argument("--tv", action="store_true", help="update tv")
     parser.add_argument("--radio", action="store_true", help="update radio")
+    parser.add_argument("--minutes-delta", type=int, default=0, help="minutes delta to add to current time")
     args = parser.parse_args()
 
     if not args.tv and not args.radio:
         logger.error("whether tv nor radio update requested by flags")
 
-    formatter = Formatter()
+    formatter = Formatter(args.minutes_delta)
     omnia = Omnia(settings.domain_id, settings.api_secret, settings.session_id)
 
     if args.tv:

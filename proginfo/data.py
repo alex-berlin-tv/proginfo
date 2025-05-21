@@ -14,10 +14,11 @@ TIME_FORMAT = "%H:%M:%S"
 
 
 class Formatter:
-    def __init__(self):
+    def __init__(self, minutes_delta):
         logger.debug("Initializing Formatter with TV and radio data")
         self.tv_data = Data.from_url(settings.tv_data_url)
         self.radio_data = Data.from_url(settings.radio_data_url)
+        self.minutes_delta = minutes_delta
 
     def tv_title(self) -> str:
         logger.debug("Getting TV title")
@@ -42,11 +43,11 @@ class Formatter:
 
     def __tv_current(self) -> "Data":
         logger.debug("Getting current TV data")
-        return Data(self.tv_data.current_and_next())
+        return Data(self.tv_data.current_and_next(self.minutes_delta))
 
     def __radio_current(self) -> "Data":
         logger.debug("Getting current radio data")
-        return Data(self.radio_data.current_and_next())
+        return Data(self.radio_data.current_and_next(self.minutes_delta))
 
 
 @define
@@ -72,11 +73,11 @@ class Data:
         response.raise_for_status()
         return response.content.decode(settings.data_encoding)
 
-    def current_and_next(self) -> list["Entry"]:
+    def current_and_next(self, minutes_delta: int = 0) -> list["Entry"]:
         if settings.next_count < 2:
             raise ValueError(
                 f"field next_count in config has to be at least 2, currently {settings.next_count}")
-        current_time = datetime.now()
+        current_time = datetime.now() + timedelta(minutes=minutes_delta)
         logger.debug(f"Finding current and next entries for time: {current_time}")
         rsl: list["Entry"] = []
         i = 0
