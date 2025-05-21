@@ -29,7 +29,9 @@ class Formatter:
 
     def radio_title(self) -> str:
         logger.debug("Getting radio title")
-        return self.__radio_current().title()
+        rsl = self.__radio_current().title()
+        logger.debug(f"Radio title: {rsl}")
+        return rsl
 
     def radio_description(self) -> str:
         logger.debug("Getting radio description")
