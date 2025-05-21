@@ -28,9 +28,9 @@ class Formatter:
         logger.debug("Getting TV description")
         return self.__tv_current().description(None, settings.tv_description_footer)
 
-    def radio_title(self) -> str:
+    def radio_title(self, ) -> str:
         logger.debug("Getting radio title")
-        rsl = self.__radio_current().title()
+        rsl = self.__radio_current().title(self.minutes_delta)
         logger.debug(f"Radio title: {rsl}")
         return rsl
 
@@ -113,13 +113,13 @@ class Data:
             rsl.extend(next_entries)
         return rsl
 
-    def title(self) -> str:
+    def title(self, minutes_delta: int) -> str:
         if len(self.root) < 1:
             raise RuntimeError("tried to call method on empty collection")
         next_entry: Optional[Entry] = None
         if len(self.root) > 1:
             next_entry = self.root[1]
-        return self.root[0].format_title(next_entry, self.minutes_delta)
+        return self.root[0].format_title(next_entry, minutes_delta)
 
     def description(self, header: str | None, footer: str) -> str:
         if header is not None:
