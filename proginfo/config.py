@@ -19,6 +19,8 @@ class Settings:
     data_encoding: str
     next_count: int
     log_level: str
+    two_titles_window_start_minutes: int
+    two_titles_window_end_minutes: int
 
 
 settings = ts.load(

@@ -15,3 +15,5 @@ radio_set_title = false
 data_encoding = ""
 next_count = 0
 log_level = ""
+two_titles_window_start_minutes = 40
+two_titles_window_end_minutes = 56

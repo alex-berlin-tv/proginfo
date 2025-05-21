@@ -191,8 +191,8 @@ class Entry:
         to predict when the content in the frontend gets updated.
         """
         current_time = datetime.now().time() + timedelta(minutes=minutes_delta)
-        start_time = time(current_time.hour, 40, 0)
-        end_time = time(current_time.hour, 56, 0)
+        start_time = time(current_time.hour, settings.two_titles_window_start_minutes, 0)
+        end_time = time(current_time.hour, settings.two_titles_window_end_minutes, 0)
         should_show_both = start_time <= current_time <= end_time
         logger.debug(f"Checking if should show both titles at {current_time}: {should_show_both} (window: {start_time}-{end_time})")
         return should_show_both
